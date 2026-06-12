@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOREKI PAY - Pembayaran</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0f0c29;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+        .container {
+            background: #1a1a2e;
+            border-radius: 18px;
+            padding: 22px;
+            max-width: 420px;
+            width: 100%;
+            color: white;
+            border: 1px solid #302b63;
+        }
+        .header { text-align: center; margin-bottom: 18px; }
+        .logo { font-size: 24px; font-weight: bold; color: #ff4444; }
+        .subtitle { color: #888; font-size: 11px; margin-top: 2px; }
+
+        .amount-box {
+            background: #16213e; border-radius: 12px;
+            padding: 18px; text-align: center; margin-bottom: 18px;
+        }
+        .amount-box label { color: #aaa; font-size: 11px; display: block; margin-bottom: 5px; }
+        .amount-box input {
+            background: none; border: none; border-bottom: 2px solid #302b63;
+            color: white; font-size: 30px; text-align: center;
+            width: 100%; padding: 8px 0; outline: none;
+        }
+
+        .section-title { color: #aaa; font-size: 11px; margin-bottom: 8px; }
+
+        .method-card {
+            background: #16213e; border: 2px solid transparent;
+            border-radius: 12px; padding: 14px; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer; transition: 0.2s;
+        }
+        .method-card.selected { border-color: #ff4444; background: #1a0a0a; }
+        .method-icon {
+            width: 42px; height: 42px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px;
+        }
+        .dana-bg { background: #1a3a6c; }
+        .gopay-bg { background: #1a5c3a; }
+        .qris-bg { background: #5c3a1a; }
+        .method-name { font-size: 14px; font-weight: bold; }
+        .method-desc { font-size: 10px; color: #888; }
+        .method-check {
+            margin-left: auto; width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid #555; display: flex; align-items: center; justify-content: center;
+            font-size: 11px; color: transparent;
+        }
+        .selected .method-check { background: #ff4444; border-color: #ff4444; color: white; }
+
+        .info-box {
+            background: #0d1b2a; border: 1px solid #1b4332;
+            border-radius: 12px; padding: 16px; margin: 15px 0; display: none;
+        }
+        .info-box.show { display: block; }
+        .info-box .label { color: #aaa; font-size: 10px; }
+        .info-box .number { font-size: 26px; font-weight: bold; color: #00ff88; letter-spacing: 2px; }
+        .info-box .name { font-size: 13px; color: #ccc; margin-bottom: 8px; }
+        .copy-btn {
+            background: #1a3a5c; color: white; border: none;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 11px;
+        }
+
+        .qris-img {
+            width: 180px; height: 180px; border-radius: 12px;
+            border: 2px solid #302b63; background: white; padding: 8px;
+            display: block; margin: 0 auto 8px;
+        }
+
+        .instructions { font-size: 12px; color: #bbb; line-height: 1.9; }
+        .instructions b { color: #ffaa00; }
+
+        .total-row {
+            background: #16213e; border-radius: 10px;
+            padding: 12px; display: flex; justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .total-row .lbl { color: #aaa; font-size: 13px; }
+        .total-row .val { font-size: 20px; font-weight: bold; color: #00ff88; }
+
+        .upload-box {
+            border: 2px dashed #555; border-radius: 10px;
+            padding: 18px; text-align: center; margin-bottom: 12px; cursor: pointer;
+        }
+        .upload-box .up-icon { font-size: 38px; }
+        .upload-box .up-text { font-size: 12px; color: #888; }
+        .upload-box .up-file { font-size: 11px; color: #00ff88; margin-top: 4px; }
+        .upload-box input { display: none; }
+
+        .timer { text-align: center; color: #ffaa00; font-size: 13px; margin-bottom: 12px; }
+        .timer span { font-weight: bold; font-size: 18px; }
+
+        .status {
+            text-align: center; padding: 12px; border-radius: 10px;
+            margin-bottom: 12px; display: none;
+        }
+        .status.show { display: block; }
+        .status.pending { background: #1a3a00; border: 1px solid #ffaa00; color: #ffaa00; }
+        .status.success { background: #003a1a; border: 1px solid #00ff88; color: #00ff88; }
+
+        .btn-konfirmasi {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            background: #ff4444; color: white; font-size: 15px; font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-konfirmasi:disabled { background: #555; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="logo">HOREKI PAY</div>
+        <div class="subtitle">DANA • GoPay • QRIS</div>
+    </div>
+
+    <!-- INPUT NOMINAL -->
+    <div class="amount-box">
+        <label>JUMLAH TRANSFER</label>
+        <input type="number" id="amountInput" placeholder="0" min="5000" oninput="hitungTotal()">
+    </div>
+
+    <!-- METODE -->
+    <div class="section-title">PILIH METODE</div>
+
+    <div class="method-card" id="cardDana" onclick="pilihMetode('dana')">
+        <div class="method-icon dana-bg">💙</div>
+        <div><div class="method-name">DANA</div><div class="method-desc">0895634448575 • Admin Rp1.000</div></div>
+        <div class="method-check">✓</div>
+    </div>
+
+    <div class="method-card" id="cardGopay" onclick="pilihMetode('gopay')">
+        <div class="method-icon gopay-bg">💚</div>
+        <div><div class="method-name">GoPay</div><div class="method-desc">081374369420 • Admin Rp1.000</div></div>
+        <div class="method-check">✓</div>
+    </div>
+
+    <div class="method-card" id="cardQris" onclick="pilihMetode('qris')">
+        <div class="method-icon qris-bg">📷</div>
+        <div><div class="method-name">QRIS (All Payment)</div><div class="method-desc">Scan QR • Admin Rp1.000</div></div>
+        <div class="method-check">✓</div>
+    </div>
+
+    <!-- INFO REKENING -->
+    <div class="info-box" id="infoBox">
+        <div id="infoRekening">
+            <div class="label" id="bankLabel">DANA</div>
+            <div class="number" id="accountNumber">0895634448575</div>
+            <div class="name" id="accountName">Rizky Yolan Syahputra</div>
+            <button class="copy-btn" onclick="copyNomor()">📋 Salin Nomor</button>
+        </div>
+        <div id="infoQris" style="display:none; text-align:center;">
+            <img class="qris-img" id="qrisImage" src="https://via.placeholder.com/180x180/FFFFFF/000000?text=QRIS+LO" alt="QRIS">
+            <div style="color:#aaa; font-size:10px;">Scan pakai DANA/GoPay/OVO/BCA</div>
+        </div>
+        <div class="instructions" id="instructions" style="margin-top:12px;"></div>
+    </div>
+
+    <!-- TOTAL -->
+    <div class="total-row">
+        <span class="lbl">Total Transfer:</span>
+        <span class="val" id="totalAmount">Rp 0</span>
+    </div>
+
+    <!-- UPLOAD -->
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+        <div class="up-icon">📁</div>
+        <div class="up-text">KLIK UNTUK UPLOAD BUKTI TRANSFER</div>
+        <div class="up-file" id="fileName"></div>
+        <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this)">
+    </div>
+
+    <!-- TIMER -->
+    <div class="timer" id="timerBox">
+        ⏰ Sisa waktu: <span id="countdown">02:00:00</span>
+    </div>
+
+    <!-- STATUS -->
+    <div class="status pending show" id="statusPending">⏳ Menunggu Pembayaran...</div>
+    <div class="status success" id="statusSuccess">✅ Pembayaran Berhasil!</div>
+
+    <!-- KONFIRMASI -->
+    <button class="btn-konfirmasi" id="confirmBtn" onclick="konfirmasi()">
+        KONFIRMASI PEMBAYARAN
+    </button>
+</div>
+
+<script>
+// DATA LO
+const data = {
+    dana:  { bank:'DANA',  number:'0895634448575', name:'Rizky Yolan Syahputra', fee:1000 },
+    gopay: { bank:'GoPay', number:'081374369420', name:'Rizky Yolan Syahputra', fee:1000 },
+    qris:  { bank:'QRIS',  number:'-',           name:'Rizky Yolan Syahputra', fee:1000 }
+};
+const QRIS_URL = 'https://c.termai.cc/i138/ILez3.jpg';
+const WA_NUMBER = '62895634448575'; // Nomor WhatsApp lo
+
+let metode = null, fileBukti = null, timerInterval = null;
+
+// PILIH METODE
+function pilihMetode(m) {
+    metode = m;
+    document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('card' + m.charAt(0).toUpperCase() + m.slice(1)).classList.add('selected');
+
+    const d = data[m];
+    document.getElementById('bankLabel').textContent = d.bank;
+    document.getElementById('accountNumber').textContent = d.number;
+    document.getElementById('accountName').textContent = d.name;
+    document.getElementById('infoBox').classList.add('show');
+
+    if (m === 'qris') {
+        document.getElementById('infoRekening').style.display = 'none';
+        document.getElementById('infoQris').style.display = 'block';
+        document.getElementById('qrisImage').src = QRIS_URL;
+        document.getElementById('instructions').innerHTML = `
+            <b>Cara Bayar QRIS:</b><br>
+            1. Buka <b>DANA/GoPay/OVO/BCA</b><br>
+            2. Pilih <b>Scan QRIS</b><br>
+            3. Scan QR di atas<br>
+            4. Masukkan nominal<br>
+            5. <b>Bayar</b> & screenshot
+        `;
+    } else {
+        document.getElementById('infoRekening').style.display = 'block';
+        document.getElementById('infoQris').style.display = 'none';
+        document.getElementById('instructions').innerHTML = `
+            <b>Cara Transfer ${d.bank}:</b><br>
+            1. Buka aplikasi <b>${d.bank}</b><br>
+            2. Pilih <b>Kirim Uang</b><br>
+            3. Masukkan nomor: <b>${d.number}</b><br>
+            4. Nominal sesuai total<br>
+            5. <b>Kirim</b> & screenshot
+        `;
+    }
+
+    hitungTotal();
+    resetTimer();
+    startTimer();
+    document.getElementById('statusPending').classList.add('show');
+    document.getElementById('statusSuccess').classList.remove('show');
+    document.getElementById('confirmBtn').disabled = false;
+    document.getElementById('confirmBtn').textContent = 'KONFIRMASI PEMBAYARAN';
+}
+
+// HITUNG TOTAL
+function hitungTotal() {
+    const amount = parseInt(document.getElementById('amountInput').value) || 0;
+    const fee = metode ? data[metode].fee : 0;
+    const total = amount + fee;
+    document.getElementById('totalAmount').textContent = 'Rp ' + total.toLocaleString('id-ID');
+}
+
+// COPY NOMOR
+function copyNomor() {
+    const num = document.getElementById('accountNumber').textContent;
+    navigator.clipboard.writeText(num).then(() => alert('✅ Nomor disalin: ' + num));
+}
+
+// UPLOAD
+function handleFile(input) {
+    if (input.files[0]) {
+        fileBukti = input.files[0];
+        document.getElementById('fileName').textContent = '✅ ' + input.files[0].name;
+    }
+}
+
+// TIMER
+function startTimer() {
+    clearInterval(timerInterval);
+    let sec = 7200;
+    updateTimer(sec);
+    timerInterval = setInterval(() => {
+        sec--;
+        updateTimer(sec);
+        if (sec <= 0) {
+            clearInterval(timerInterval);
+            document.getElementById('confirmBtn').disabled = true;
+            document.getElementById('timerBox').innerHTML = '⏰ WAKTU HABIS!';
+        }
+    }, 1000);
+}
+function resetTimer() { clearInterval(timerInterval); updateTimer(7200); }
+function updateTimer(s) {
+    const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), se = s%60;
+    document.getElementById('countdown').textContent = 
+        String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(se).padStart(2,'0');
+}
+
+// KONFIRMASI + KIRIM KE WA
+function konfirmasi() {
+    const amount = parseInt(document.getElementById('amountInput').value) || 0;
+
+    if (!metode) return alert('❌ Pilih metode pembayaran dulu!');
+    if (amount === 0) return alert('❌ Masukkan jumlah transfer!');
+    if (!fileBukti) return alert('❌ Upload bukti transfer dulu!');
+
+    const d = data[metode];
+    const total = amount + d.fee;
+
+    clearInterval(timerInterval);
+
+    document.getElementById('statusPending').classList.remove('show');
+    document.getElementById('statusSuccess').classList.add('show');
+    document.getElementById('confirmBtn').disabled = true;
+    document.getElementById('confirmBtn').textContent = '✅ BERHASIL';
+    document.getElementById('timerBox').innerHTML = '✅ Selesai!';
+
+    // Kirim ke WhatsApp lo
+    const pesan = `Halo kak, saya sudah transfer:%0A%0A`
+        + `Metode: ${d.bank}%0A`
+        + `Jumlah: Rp ${total.toLocaleString('id-ID')}%0A`
+        + `Nama: ${d.name}%0A%0A`
+        + `Mohon dicek ya kak.`;
+
+    window.open(`https://wa.me/${WA_NUMBER}?text=${pesan}`, '_blank');
+
+    alert('✅ Pembayaran berhasil dikonfirmasi!\n\nChat WhatsApp akan terbuka untuk kirim bukti.');
+}
+</script>
+
+</body>
+</html>
